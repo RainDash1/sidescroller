@@ -279,33 +279,22 @@ const mobs = {
                 ctx.stroke()
             },
             healthBar4() {
+                const w = this.radius * 0.43;
+                const x = this.position.x - this.radius;
+                const y = this.position.y - this.radius * 1.4;
+                ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
+                ctx.fillRect(x, y, this.radius * 2, w);
+                let health
                 if (this.health > 0.5) {
-                    const h = this.radius * 0.36;
-                    const w = this.radius * 2;
-                    const x = this.position.x - w / 2;
-                    const y = this.position.y - w * 0.7;
-                    ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
-                    ctx.fillRect(x, y, w, h);
                     ctx.fillStyle = "#000";
-                    const health = 2 * (this.health - 0.5)
-                    for (let j = 0; j < 5; j++) {
-                        if (health > j * 0.2) {
-                            ctx.fillRect(x + (j * 0.41) * this.radius, y, h, h);
-                        }
-                    }
+                    health = 2 * (this.health - 0.5)
                 } else {
-                    const h = this.radius * 0.36;
-                    const w = this.radius * 2;
-                    const x = this.position.x - w / 2;
-                    const y = this.position.y - w * 0.7;
-                    ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
-                    ctx.fillRect(x, y, w, h);
                     ctx.fillStyle = "#fff";
-                    const health = 2 * this.health
-                    for (let j = 0; j < 5; j++) {
-                        if (health > j * 0.2) {
-                            ctx.fillRect(x + (j * 0.41) * this.radius, y, h, h);
-                        }
+                    health = 2 * this.health
+                }
+                for (let j = 0; j < 4; j++) {
+                    if (health > j * 0.25) {
+                        ctx.fillRect(x + (j * 0.52) * this.radius, y, w, w);
                     }
                 }
             },
@@ -546,7 +535,7 @@ const mobs = {
                     ctx.fill();
                 }
             },
-            wing(a, radius = 250, ellipticity = 0.4, dmg = 0.0006) {
+            wing(a, radius = 250, ellipticity = 0.4, dmg = 0.0003) {
                 const minorRadius = radius * ellipticity
                 const perp = { x: Math.cos(a), y: Math.sin(a) } //
                 const where = Vector.add(this.position, Vector.mult(perp, radius + 0.8 * this.radius))
@@ -559,6 +548,15 @@ const mobs = {
                 const hitPlayer = Matter.Query.ray([player], this.position, Vector.add(this.position, Vector.mult(perp, radius * 2.05)), minorRadius)
                 if (hitPlayer.length && m.immuneCycle < m.cycle) {
                     m.takeDamage(dmg * this.damageScale());
+                    // if (m.immuneCycle < m.cycle + immuneTime) m.immuneCycle = m.cycle + immuneTime; //player is immune to damage
+
+                    //push player away
+                    const sub = Vector.sub(m.pos, this.position)
+                    const push = Vector.mult(Vector.normalise(sub), 0.15 * player.mass)
+                    Matter.Body.setVelocity(player, {
+                        x: 0.9 * player.velocity.x + push.x,
+                        y: 0.9 * player.velocity.y + push.y - 0.1 * player.mass
+                    })
                 }
             },
             searchSpring() {
@@ -1005,6 +1003,50 @@ const mobs = {
                                             ctx.stroke();
                                         },
                                     })
+                                }
+                                if (tech.isChatter && !this.isInvulnerable) {
+                                    let isTalking = false
+                                    for (let i = 0; i < simulation.ephemera.length; i++) {
+                                        if (simulation.ephemera[i].name === "in game text") {
+                                            isTalking = true
+                                        }
+                                    }
+                                    if (!isTalking) {
+                                        const quotes = [
+                                            "I can do *anything!*",
+                                            "Chaos, chaos!",
+                                            "Let's make the devilskn-",
+                                            "Darmok and Jaled at Tanagra",
+                                            "Kiazi's children, their faces wet!",
+                                            "Sokath with his eyes uncovered!",
+                                            "Are you suggesting that coconuts can migrate?",
+                                            "One, Two, Five!",
+                                            "Is it an African swallow or a European swallow?",
+                                            "kept you waiting, huh?",
+                                            "This prison... to hold... me?",
+                                            "Did everyone see that? Because I will not be doing it again",
+                                            "I see the light... it's a [404 Error]!",
+                                            "I wish i took those digeridoo lessons",
+                                            "Your mother was a hamster, and your father smelt of elderberries",
+                                            "In Rod we trust",
+                                            "AAAAAAAA",
+                                            // "I caught size 2",
+                                            "the devil may cry?",
+                                            "hey Mr M? are you still mad at me?"
+                                        ];
+                                        const color = `#${Math.floor(Math.random() * 76 + 180).toString(16)}${Math.floor(Math.random() * 121).toString(16).padStart(2, '0')}${Math.floor(Math.random() * 121).toString(16).padStart(2, '0')}`
+                                        const quote = quotes[Math.floor(Math.random() * quotes.length)]
+                                        // simulation.inGameConsole(`<span style="color:"${color}">${quote}</span>`, 360)
+                                        level.inGameText(this.position.x, this.position.y - 50, quote, 240, color)
+                                    }
+                                    // simulation.ephemera.push({
+                                    //     count: 240, //cycles before it self removes
+                                    //     vertices: this.vertices,
+                                    //     do() {
+                                    //         this.count--
+                                    //         if (this.count < 0) simulation.removeEphemera(this)
+                                    //     },
+                                    // })
                                 }
                             } else if (tech.isMobLowHealth && this.health < 0.25) {
                                 dmg *= 3

@@ -241,7 +241,7 @@ const powerUps = {
     choose(type, index) {
         if (type === "gun") {
             b.giveGuns(index)
-            let text = `<div class="circle-grid gun"></div> &nbsp; b.giveGuns("<strong class='color-text'>${b.guns[index].name}</strong>")`
+            let text = `<div class="circle-grid gun"></div> b.giveGuns("<strong class='color-text'>${b.guns[index].name}</strong>")`
             if (b.inventory.length === 1) text += `<br>input.key.gun<span class='color-symbol'>:</span> ["<span class='color-text'>MouseLeft</span>"]`
             if (b.inventory.length === 2) text += `
             <br>input.key.nextGun<span class='color-symbol'>:</span> ["<span class='color-text'>${input.key.nextGun}</span>","<span class='color-text'>MouseWheel</span>"]
@@ -296,7 +296,13 @@ const powerUps = {
                 }
             }
         } else if (type === "tech") {
-            simulation.inGameConsole(`<div class="circle-grid tech"></div> &nbsp; <span class='color-var'>tech</span>.giveTech("<strong class='color-text'>${tech.tech[index].name}</strong>")`);
+            //add to list of techHistory in local storage
+            if (localSettings.isAllowed && !simulation.isCheating && !m.isSwitchingWorlds) {
+                localSettings.techHistory.push(tech.tech[index].name)
+                if (localSettings.techHistory.length > 1000) localSettings.techHistory.shift() //prevent the local storage from taking up too much space by remove oldest tech names
+                localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+            }
+            simulation.inGameConsole(`<div class="circle-grid tech"></div> <span class='color-var'>tech</span>.giveTech("<strong class='color-text'>${tech.tech[index].name}</strong>")`);
             tech.giveTech(index)
         }
         powerUps.endDraft(type);
@@ -736,20 +742,6 @@ const powerUps = {
 
             m.couplingChange(1)
         },
-        // spawnDelay(num) {
-        //     let count = num
-        //     let respawnDrones = () => {
-        //         if (count > 0) {
-        //             requestAnimationFrame(respawnDrones);
-        //             if (!simulation.paused && !simulation.isChoosing) { //&& !(simulation.cycle % 2)
-        //                 count--
-        //                 const where = { x: m.pos.x + 50 * (Math.random() - 0.5), y: m.pos.y + 50 * (Math.random() - 0.5) }
-        //                 powerUps.spawn(where.x, where.y, "coupling");
-        //             }
-        //         }
-        //     }
-        //     requestAnimationFrame(respawnDrones);
-        // }
     },
     boost: {
         name: "boost",
@@ -845,12 +837,13 @@ const powerUps = {
                 for (let i = 0, len = -amount; i < len; i++) powerUps.spawn(m.pos.x, m.pos.y, "research");
             }
             if (tech.isRerollHaste) {
-                if (powerUps.research.count === 0) {
-                    tech.researchHaste = 0.5;
-                    b.setFireCD();
-                } else {
-                    tech.researchHaste = 1;
-                    b.setFireCD();
+                if (powerUps.research.count > 1) {
+                    for (let i = 0; i < tech.tech.length; i++) {
+                        if (tech.tech[i].name === "perturbation theory") {
+                            powerUps.ejectTech(i)
+                            break
+                        }
+                    }
                 }
             }
         },
@@ -861,7 +854,7 @@ const powerUps = {
                     powerUps.research.changeRerolls(-1)
                     if (tech.isResearchDamage) {
                         m.damageDone *= 1.03
-                        simulation.inGameConsole(`<span class='color-var'>tech</span>.damage *= ${1.03} //peer review`);
+                        simulation.inGameConsole(`<span class='color-var'>tech</span>.<strong class='color-d'>damage</strong> *= ${1.03} //peer review`);
                         // tech.addJunkTechToPool(0.01)
                     }
                     if (tech.isResearchHeal) {
@@ -878,7 +871,7 @@ const powerUps = {
             }
             if (tech.isResearchDamage) {
                 m.damageDone *= 1.03
-                simulation.inGameConsole(`<span class='color-var'>tech</span>.damage *= ${1.03} //peer review`);
+                simulation.inGameConsole(`<span class='color-var'>tech</span>.<strong class='color-d'>damage</strong> *= ${1.03} //peer review`);
                 // tech.addJunkTechToPool(0.01)
             }
             if (tech.isResearchHeal) {
@@ -910,11 +903,11 @@ const powerUps = {
                     let overHeal = m.health + heal * simulation.healScale - m.maxHealth //used with tech.isOverHeal
                     const healOutput = Math.min(m.maxHealth - m.health, heal) * simulation.healScale
                     m.addHealth(heal);
-                    if (healOutput > 0) simulation.inGameConsole(`<div class="circle-grid heal"></div> &nbsp; <span class='color-var'>m</span>.health <span class='color-symbol'>+=</span> ${(healOutput).toFixed(3)}`) // <br>${m.health.toFixed(3)}
+                    if (healOutput > 0) simulation.inGameConsole(`<div class="circle-grid heal"></div> <span class='color-var'>m</span>.health <span class='color-symbol'>+=</span> ${(healOutput).toFixed(3)}`) // <br>${m.health.toFixed(3)}
                     if (tech.isOverHeal && overHeal > 0) { //tech quenching
-                        tech.extraMaxHealth += 0.5 * overHeal //increase max health
+                        tech.extraMaxHealth += 0.6 * overHeal //increase max health
                         m.setMaxHealth();
-                        simulation.inGameConsole(`<div class="circle-grid heal"></div> &nbsp; <span class='color-var'>m</span>.maxHealth <span class='color-symbol'>+=</span> ${(0.3 * overHeal).toFixed(3)}`)
+                        simulation.inGameConsole(`<div class="circle-grid heal"></div> <span class='color-var'>m</span>.maxHealth <span class='color-symbol'>+=</span> ${(0.3 * overHeal).toFixed(3)}`)
                         simulation.drawList.push({ //add dmg to draw queue
                             x: m.pos.x,
                             y: m.pos.y,
@@ -1018,7 +1011,7 @@ const powerUps = {
         }
     },
     cancelText(type) {
-        if (tech.isSuperDeterminism || type === "constraint") {
+        if (tech.isSuperDeterminism || type === "constraint" || type === "entanglement") {
             return `<div></div>`
         } else if (tech.isCancelTech && tech.cancelTechCount === 0) {
             return `<div class='cancel-card sticky' onclick='powerUps.endDraft("${type}",true)' style="width: 115px;"><span class="color-randomize">randomize</span></div>`
@@ -1074,7 +1067,7 @@ const powerUps = {
         }
         if (tech.isSuperDeterminism) {
             text += `<span class='cancel-card' style="width: 95px;float: right;background-color: #aaa;color:#888;">cancel</span>`
-        } else if (tech.isCancelTech && tech.cancelTechCount === 0) {
+        } else if (tech.isCancelTech && tech.cancelTechCount === 0 && type !== "entanglement") {
             text += `<span class='cancel-card' onclick='powerUps.endDraft("${type}",true)' style="width: 115px;float: right;font-size:0.9em;padding-top:5px;"><span class="color-randomize">randomize</span></span>`
         } else if (level.levelsCleared === 0 && localSettings.isTrainingNotAttempted && b.inventory.length === 0) {
             text += `<span class='cancel-card' style="visibility: hidden;">cancel</span>` //don't show cancel if on initial level and haven't done tutorial
@@ -1527,6 +1520,7 @@ const powerUps = {
                     if (tech.isBrainstorm && !tech.isBrainstormActive && !simulation.isChoosing) {
                         tech.isBrainstormActive = true
                         let count = 1
+                        const drain = 0.25
                         let timeStart = performance.now()
                         const cycle = (timestamp) => {
                             // if (timeStart === undefined) timeStart = timestamp
@@ -1537,8 +1531,12 @@ const powerUps = {
                                 document.getElementById("choose-grid").style.pointerEvents = "auto"; //turn off the normal 500ms delay
                                 document.body.style.cursor = "auto";
                                 document.getElementById("choose-grid").style.transitionDuration = "0s";
+                                if (m.energy >= drain) {
+                                    m.energy -= drain
+                                    simulation.inGameConsole(`m.<strong class='color-f'>energy</strong> <span class='color-symbol'>-=</span> ${(100 * drain).toFixed(0)} //<em>brainstorming</em>`)
+                                }
                             }
-                            if (count < 10 && simulation.isChoosing && tech.isBrainstormActive) {
+                            if (count < 21 && simulation.isChoosing && tech.isBrainstormActive && m.energy >= drain) {
                                 requestAnimationFrame(cycle);
                             } else {
                                 tech.isBrainstormActive = false
@@ -1623,7 +1621,7 @@ const powerUps = {
             }
         },
     },
-    spawnDelay(type, count, delay = 2) {
+    spawnDelay(type, count, delay = 2, location = m.pos) {
         count *= delay
         let cycle = () => {
             if (count > 0) {
@@ -1631,7 +1629,7 @@ const powerUps = {
                 if (!simulation.paused && !simulation.isChoosing && powerUp.length < 300) { //&& !(simulation.cycle % 2)
                     count--
                     if (!(count % delay)) {
-                        const where = { x: m.pos.x + 50 * (Math.random() - 0.5), y: m.pos.y + 50 * (Math.random() - 0.5) }
+                        const where = { x: location.x + 50 * (Math.random() - 0.5), y: location.y + 50 * (Math.random() - 0.5) }
                         powerUps.spawn(where.x, where.y, type);
                     }
                 }
@@ -1642,7 +1640,17 @@ const powerUps = {
     onPickUp(who) {
         powerUps.research.currentRerollCount = 0
         if (tech.isTechDamage && who.name === "tech") m.takeDamage(0.1)
-        if (tech.isMassEnergy) m.energy += 2 * level.isReducedRegen;
+        if (tech.isMassEnergy) {
+            if (!m.isTimeDilated) {
+                requestAnimationFrame(() => {
+                    simulation.timePlayerSkip(15)
+                    simulation.loop(); //ending with a wipe and normal loop fixes some very minor graphical issues where things are draw in the wrong locations
+                    m.energy += 2 * level.isReducedRegen;
+                }); //wrapping in animation frame prevents errors, probably
+            } else {
+                m.energy += 2 * level.isReducedRegen;
+            }
+        }
         if (tech.isMineDrop && bullet.length < 150 && Math.random() < 0.5) {
             if (tech.isLaserMine && input.down) {
                 b.laserMine(who.position)
@@ -1657,10 +1665,6 @@ const powerUps = {
             powerUps.spawn(x, y, "heal");
             return;
         }
-        if (Math.random() < 0.15 && b.inventory.length > 0) {
-            powerUps.spawn(x, y, "ammo");
-            return;
-        }
         if (Math.random() < 0.0007 * (3 - b.inventory.length)) { //a new gun has a low chance for each not acquired gun up to 3
             powerUps.spawn(x, y, "gun");
             return;
@@ -1671,6 +1675,12 @@ const powerUps = {
         }
         if (tech.isCouplingPowerUps && Math.random() < 0.17) {
             powerUps.spawn(x, y, "coupling");
+            return;
+        }
+        // 0.03 * (level.levelsCleared > 7) + 0.05 * (level.levelsCleared > 10)
+        if ((Math.random() < 0.15 + 0.002 * level.levelsCleared) && b.inventory.length > 0) {
+            powerUps.spawn(x, y, "ammo");
+            if (Math.random() < 0.2 * (simulation.difficultyMode - 4)) powerUps.spawn(x + 20, y, "ammo");
             return;
         }
         if (Math.random() < 0.02 || (tech.isBoostPowerUps && Math.random() < 0.14)) {
@@ -1703,11 +1713,13 @@ const powerUps = {
                     }
                 } else {
                     if (m.health < 0.65 && !tech.isEnergyHealth) {
+                        powerUps.spawn(x - 20, y, "heal");
                         powerUps.spawn(x, y, "heal");
-                        powerUps.spawn(x, y, "heal");
+                        powerUps.spawn(x + 20, y, "heal");
                     } else {
+                        powerUps.spawn(x - 20, y, "ammo");
                         powerUps.spawn(x, y, "ammo");
-                        powerUps.spawn(x, y, "ammo");
+                        powerUps.spawn(x + 20, y, "ammo");
                     }
                 }
             }
@@ -1723,9 +1735,9 @@ const powerUps = {
                 powerUps.spawn(x, y + 40, "heal", false)
                 powerUps.spawn(x, y - 40, "heal", false)
             }
-            if (tech.isResearchReality) powerUps.spawnDelay("research", 6)
-            if (tech.isBanish) powerUps.spawnDelay("research", 3)
-            if (tech.isCouplingNoHit) powerUps.spawnDelay("coupling", 9)
+            if (tech.isResearchReality) powerUps.spawnDelay("research", 6, 2, { x: x, y: y })
+            if (tech.isBanish) powerUps.spawnDelay("research", simulation.difficultyMode > 2 ? 2 : 4, 2, { x: x, y: y })
+            if (tech.isCouplingNoHit) powerUps.spawnDelay("coupling", 9, 2, { x: x, y: y })
             // if (tech.isRerollDamage) powerUps.spawnDelay("research", 1)
         }
     },
@@ -1818,13 +1830,13 @@ const powerUps = {
         }
     },
     pauseEjectTech(index) {
-        if ((tech.isPauseEjectTech || simulation.testing) && !simulation.isChoosing && !tech.tech[index].isInstant) {
+        if ((tech.isPauseEjectTech || simulation.testing) && !simulation.isChoosing && !tech.tech[index].isInstant && m.immuneCycle < m.cycle) {
             const dmg = tech.pauseEjectTech * 0.01
-            if ((!tech.isEnergyHealth && dmg * m.defense() < m.health) || (tech.isEnergyHealth && dmg * Math.pow(m.defense(), 0.6) < m.energy)) {
+            if ((!tech.isEnergyHealth && (dmg * m.defense() < m.health || tech.isNoDeath)) || (tech.isEnergyHealth && dmg * Math.pow(m.defense(), 0.6) < m.energy)) {
                 tech.tech[index].frequency = 0 //banish tech
                 powerUps.ejectTech(index)
                 if (m.immuneCycle < m.cycle) m.takeDamage(tech.pauseEjectTech * 0.01, false)
-                tech.pauseEjectTech *= 1.4
+                tech.pauseEjectTech *= 2
                 if (tech.isEnergyHealth) {
                     simulation.inGameConsole(`<span class='color-var'>m</span>.<span class='color-f'>energy</span> <span class='color-symbol'>-=</span> ${(100 * dmg * m.defense()).toFixed(1)} <em>//paradigm shift</em>`)
                 } else {
