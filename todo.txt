@@ -2,32 +2,38 @@
 
 
 bug fixes
-  archetype and aberration
-    sorting order was reversed
-    removed tech you have and archetype and aberration from list
-    
+ exploding blocks was exploding blocks that shouldn't explode, like switches and platforms
 
 *********************************************************** TODO *****************************************************
 
-add white box and caption to chatter JUNK tech
+add a setting to say the name of each tech/field/guns
+  is the built in voice good enough accuracy? (yep)
+  when to generate audio?
+    click on the orb while paused?
+    add new icon to click on to the right align of the title
+    after choose (this needs a setting to disable)
+    just make it a JUNK tech?
 
-new constraint - no pause while choosing?
-  this was removed because it had issues with full screen
+mob attack - crash on top of player when above
+  mob flies towards player, but aims for a space above the player (if there is no map of body elements int the way)
+mob attack - run towards player when in same vertical row
 
-if player has missile bot and a few other bots
+make more Cordyceps/zombie tech?
+  spawn zombie in other ways?
+  tech that buff zombies?
+    zombies move with you to next zone?
+      this is tricky because zombies hurt you when they touch, so where should they spawn?
+      
+show stats for popular tech choices
+  in splash screen?
+  track other stats?
+
+tech: - if player has missile bot and a few other bots
   convert up to 10 other bots into missile bot
   convert all your guns into missile bots
 
-new tech that can pause other tech
-  synergies: tech debt, stimulated emission, cache, mass-energy equivalence, Zenos paradox, Ψ(t) collapse, fine-structure constant
-  cost research to pause or un pause?
-    seems too expensive?
-  pause mechanism
-    ?pause tech
-    ?remove tech, but get it back at the start of next level
-
-
 constraint ideas
+  0.66x fire rate
   blocks are converted to mobs
     similar to blockBoss code
   ?blocks do 0.2x damage
@@ -35,52 +41,16 @@ constraint ideas
     wording?
       extra choices
     better as a JUNK tech?
-
-softBosses
-  ideas for new softBosses
-    shared health between mobs?
-      or can each piece die independent?
-        shared health in cells of 2 or 4?
-    cycling invulnerability regions
-    also catapiller, but with a head on both ends
-    unconnected mobs have some attack effect
-    2 mob wide ring shaped (or oval)
-      or square or triangle...
-    normal worm body, with 2 branching arms that have stringers on the tip
-    wings every 3 segments?
-    slasher 1,2,3,4 style head
-    softbody that isn't in a square grid, instead one column is set half way to make a series of triangle constraint connections
-    add hydra style appendages
-    add extra layers of head mobs, slicer or stinger
-    earthworm can move through walls
-
-JUNK tech
-  mobs talk when you hit them, or when they hit you.
-  https://github.com/landgreen/n-gon/discussions/500
+  no pause while choosing?
+    this was removed because it had issues with full screen
+  blocks explode 2 seconds after you touch them
 
 Boltzmann brain
   do something with a low probability to occur.
     remove the level and get rid of player legs?
+      convert with ship tech
     chance to spawn something good?
   JUNK tech?
-
-tech: advance time 1 second after eating a power up
-  skin tech Verlet integration unlocks
-    remove effect form pair production?
-
-drain energy when the block you hold hits a mob
-  set held block to collide with mob and mob bullets
-  in player code check for collisions between block and mobs
-
-performance issue with experiment mode
-  causes my computer fan to turn on when I leave it on for a few minutes
-    maybe do a performance test in dev tools
-  fixes?
-    remove some CSS animations
-      cloaking
-      choices
-    find a way to not draw things off screen?
-    something might be changing size and forcing a redraw of everything
 
 perfect diamagnetism tech:   - using field while crouching will pull in blocks
   releasing field will fire the blocks  (like control)
@@ -1547,6 +1517,8 @@ possible names for tech
   gravity wave - 
   tuple - a finite list
   Navier–Stokes - equations for the movement of fluids
+  renormalization
+
 
 
 ******************************************************** UNSOLVED BUGS ********************************************************
