@@ -8921,6 +8921,28 @@ const tech = {
             tech.isAnnihilation = false;
         }
     },
+            {
+        name: "retrocausality",
+        description: "<strong>time dilation</strong> uses <strong class='color-f'>energy</strong> to <strong>rewind</strong> your<br><strong class='color-h'>health</strong>, <strong>velocity</strong>, and <strong>position</strong> up to <strong>10</strong> seconds",
+        isFieldTech: true,
+        maxCount: 1,
+        count: 0,
+        frequency: 1,
+        frequencyDefault: 1,
+        allowed() {
+            return m.fieldMode === 6 && !m.isShipMode && !tech.isRewindAvoidDeath && !tech.isTimeSkip
+        },
+        requires: "time dilation, not CPT symmetry",
+        effect() {
+            tech.isRewindField = true;
+            m.fieldUpgrades[6].set()
+            m.wakeCheck();
+        },
+        remove() {
+            tech.isRewindField = false;
+            if (this.count) m.fieldUpgrades[6].set()
+        }
+    },
     {
         name: "Newtons 1st law",
         descriptionFunction() {
