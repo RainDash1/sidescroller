@@ -13306,6 +13306,7 @@ const tech = {
     baseFx: null,
     isNeutronium: null,
     isFreeWormHole: null,
+    isRewindField: null,
     isCrouchRegen: null,
     isAxion: null,
     isDarkEnergy: null,
